@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Copy, Download, LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Copy, Download, KeyRound, LogOut } from 'lucide-react';
 import { api, downloadBase, euro, when } from '../../lib/api';
 import { useAuth, useSound, useToast } from '../../components/state';
 
@@ -19,6 +20,7 @@ function Badge({ status }) {
 
 export default function ComptePage() {
   const { user, ready, logout } = useAuth();
+  const router = useRouter();
   const toast = useToast();
   const sound = useSound();
   const [home, setHome] = useState(null);
@@ -33,8 +35,12 @@ export default function ComptePage() {
 
   useEffect(() => {
     if (!ready || !user) return;
+    if (user.role === 'manager') {
+      router.replace('/manager');
+      return;
+    }
     load().catch((err) => setError(err.message));
-  }, [ready, user]);
+  }, [ready, user, router]);
 
   async function redeem(event) {
     event.preventDefault();
@@ -83,6 +89,8 @@ export default function ComptePage() {
     );
   }
 
+  const active = home?.licenses?.find((item) => item.active && !item.revoked);
+
   return (
     <main className="wrap account">
       <div className="head">
@@ -94,52 +102,79 @@ export default function ComptePage() {
         <button className="btn btn-ghost" onClick={logout}><LogOut size={16} /> Sortir</button>
       </div>
 
-      <section className="card">
-        <h2 className="syne" style={{ marginTop: 0 }}>Licences</h2>
-        {!home?.licenses?.length && <p className="muted">Aucune clé pour l’instant. Achète la licence à vie ou active une clé reçue sur Discord.</p>}
-        <div className="stack">
-          {home?.licenses?.map((license) => (
-            <div key={license.id}>
-              <div className="keybox">{license.key}</div>
-              <p className="muted">
-                {license.label} · {license.revoked ? 'Révoquée' : license.active ? 'Active' : 'Expirée'} · {license.expires_at ? `expire le ${when(license.expires_at)}` : 'à vie'}
-              </p>
-              <button className="btn btn-ghost btn-small" onClick={() => copy(license.key)}><Copy size={14} /> Copier</button>
-            </div>
-          ))}
-        </div>
-        <div className="cta-row" style={{ justifyContent: 'flex-start' }}>
-          <button className="btn btn-primary" disabled={!home?.canDownload} onClick={download}><Download size={16} /> Télécharger la base</button>
-          <Link className="btn btn-ghost" href="/acheter">Acheter · 200 €</Link>
-        </div>
-        {home?.version && <p className="muted">Version publiée : {home.version.version}. {home.version.changelog}</p>}
-      </section>
+      <div className="account-grid">
+        <section className="card account-hero">
+          <p className="kicker">Ta licence</p>
+          <h2 className="syne" style={{ margin: '6px 0 8px' }}>{active ? active.label : 'Aucune licence active'}</h2>
+          {!home?.licenses?.length && <p className="muted">Achète la licence à vie, ou active une clé reçue sur Discord.</p>}
+          <div className="stack">
+            {home?.licenses?.map((license) => (
+              <div key={license.id} className="license-row">
+                <div className="keybox">{license.key}</div>
+                <div className="license-meta">
+                  <span className={`badge ${license.revoked ? 'no' : license.active ? 'ok' : 'wait'}`}>
+                    {license.revoked ? 'Révoquée' : license.active ? 'Active' : 'Expirée'}
+                  </span>
+                  <span className="muted">{license.expires_at ? `Expire le ${when(license.expires_at)}` : 'À vie'}</span>
+                  <button className="btn btn-ghost btn-small" onClick={() => copy(license.key)}><Copy size={14} /> Copier</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="cta-row" style={{ justifyContent: 'flex-start' }}>
+            <button className="btn btn-primary" disabled={!home?.canDownload} onClick={download}><Download size={16} /> Télécharger la base</button>
+            <Link className="btn btn-ghost" href="/acheter">Acheter · 200 €</Link>
+          </div>
+          {home?.version && <p className="muted">Version publiée : {home.version.version}. {home.version.changelog}</p>}
+        </section>
 
-      <section className="card">
-        <h2 className="syne" style={{ marginTop: 0 }}>Activer une clé</h2>
-        <p className="muted">Colle une clé reçue par Discord ou par mail. Elle se lie à ce compte.</p>
-        <form className="stack" onSubmit={redeem}>
-          <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="WS-XXXX-XXXX-XXXX-XXXX" required />
-          {error && <p className="error">{error}</p>}
-          <button className="btn btn-primary" disabled={busy}>{busy ? 'Activation…' : 'Activer'}</button>
-        </form>
-      </section>
+        <section className="card">
+          <h2 className="syne" style={{ marginTop: 0 }}><KeyRound size={18} /> Activer une clé</h2>
+          <p className="muted">Colle une clé reçue par Discord ou par mail. Elle se lie à ce compte.</p>
+          <form className="stack" onSubmit={redeem}>
+            <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="WS-XXXX-XXXX-XXXX-XXXX" required />
+            {error && <p className="error">{error}</p>}
+            <button className="btn btn-primary" disabled={busy}>{busy ? 'Activation…' : 'Activer'}</button>
+          </form>
+        </section>
+      </div>
 
-      <section className="card">
-        <h2 className="syne" style={{ marginTop: 0 }}>Achats</h2>
-        {!home?.purchases?.length && <p className="muted">Pas encore de commande.</p>}
-        {home?.purchases?.map((item) => (
-          <p key={item.id}>{item.reference} · {euro(item.amount_cents)} · <Badge status={item.status} /> · {when(item.created_at)}</p>
-        ))}
-      </section>
+      <div className="account-split">
+        <section className="card">
+          <h2 className="syne" style={{ marginTop: 0 }}>Achats</h2>
+          {!home?.purchases?.length && <p className="muted">Pas encore de commande.</p>}
+          <div className="stack">
+            {home?.purchases?.map((item) => (
+              <div key={item.id} className="history-row">
+                <div>
+                  <strong>{item.reference}</strong>
+                  <p className="muted">{when(item.created_at)}</p>
+                </div>
+                <div className="history-side">
+                  <span>{euro(item.amount_cents)}</span>
+                  <Badge status={item.status} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
-      <section className="card">
-        <h2 className="syne" style={{ marginTop: 0 }}>Partenariats</h2>
-        {!home?.partnerships?.length && <p className="muted">Aucune demande. <Link href="/partenariat">Déposer un dossier</Link></p>}
-        {home?.partnerships?.map((item) => (
-          <p key={item.id}>{item.server_name} · <Badge status={item.status} /> {item.note && `· ${item.note}`}</p>
-        ))}
-      </section>
+        <section className="card">
+          <h2 className="syne" style={{ marginTop: 0 }}>Partenariats</h2>
+          {!home?.partnerships?.length && <p className="muted">Aucune demande. <Link href="/partenariat">Déposer un dossier</Link></p>}
+          <div className="stack">
+            {home?.partnerships?.map((item) => (
+              <div key={item.id} className="history-row">
+                <div>
+                  <strong>{item.server_name}</strong>
+                  {item.note && <p className="muted">{item.note}</p>}
+                </div>
+                <Badge status={item.status} />
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

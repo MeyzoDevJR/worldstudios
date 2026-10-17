@@ -229,6 +229,13 @@ input:focus, textarea:focus, select:focus { border-color: #7dffb3; box-shadow: 0
 .pass button { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: 0; background: transparent; color: var(--muted); cursor: pointer; }
 
 .account { padding: 36px 0 70px; display: grid; gap: 16px; }
+.account-grid { display: grid; grid-template-columns: 1.5fr 0.8fr; gap: 16px; align-items: start; }
+.account-split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.account h2 { display: flex; align-items: center; gap: 8px; }
+.license-row, .history-row { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.license-meta, .history-side { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.history-row { padding-top: 10px; border-top: 1px solid var(--line); }
+.history-row:first-child { border-top: 0; padding-top: 0; }
 .head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-end; }
 .keybox {
   font-family: Consolas, monospace;
@@ -288,7 +295,8 @@ input:focus, textarea:focus, select:focus { border-color: #7dffb3; box-shadow: 0
   }
   .links.open { display: flex; }
   .links a { padding: 12px; }
-  .grid-3, .grid-4, .steps, .price, .stats { grid-template-columns: 1fr; }
+  .grid-3, .grid-4, .steps, .price, .stats, .account-grid, .account-split { grid-template-columns: 1fr; }
+  .license-row, .history-row { flex-direction: column; align-items: stretch; }
   .manager { grid-template-columns: 1fr; }
   .side { position: sticky; top: 0; height: auto; z-index: 30; flex-direction: row; overflow: auto; border-right: 0; border-bottom: 1px solid var(--line); }
   .side strong, .side .spacer, .side .quiet { display: none; }

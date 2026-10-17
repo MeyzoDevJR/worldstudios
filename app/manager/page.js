@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Handshake, KeyRound, LayoutDashboard, LogOut, ShoppingBag, Upload, Users } from 'lucide-react';
+import { Handshake, KeyRound, LayoutDashboard, LogOut, ScrollText, Server, ShoppingBag, Upload, Users } from 'lucide-react';
 import { api, apiForm, euro, when } from '../../lib/api';
 import { useAuth, useSound, useToast } from '../../components/state';
 
@@ -11,6 +11,8 @@ const tabs = [
   ['purchases', 'Achats', ShoppingBag],
   ['partnerships', 'Partenariats', Handshake],
   ['licenses', 'Licences', KeyRound],
+  ['servers', 'Serveurs', Server],
+  ['logs', 'Journal', ScrollText],
   ['base', 'Base', Upload],
   ['users', 'Comptes', Users],
 ];
@@ -260,6 +262,51 @@ export default function ManagerPage() {
               </table>
             </div>
           </>
+        )}
+
+        {data && tab === 'servers' && (
+          <div className="table-wrap">
+            <table className="table">
+              <thead><tr><th>Serveur</th><th>Licence</th><th>Joueurs</th><th>Vu</th><th>État</th><th></th></tr></thead>
+              <tbody>
+                {(data.servers || []).map((item) => (
+                  <tr key={item.id}>
+                    <td>{item.hostname}<br /><span className="muted">{item.ip}</span></td>
+                    <td>{item.key || 'Clé inconnue'}<br /><span className="muted">{item.email}</span></td>
+                    <td>{item.players}/{item.slots || '—'}</td>
+                    <td>{when(item.last_seen)}</td>
+                    <td>{item.online && item.valid ? <span className="badge ok">En ligne</span> : <span className="badge no">Coupé</span>}</td>
+                    <td>
+                      {item.license_id && item.valid && (
+                        <button className="btn btn-danger btn-small" onClick={() => act(() => api(`/api/manager/licenses/${item.license_id}/revoke`, { method: 'POST', body: {} }), 'Clé révoquée. Le serveur se verrouille au prochain contrôle.')}>Révoquer</button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {!data.servers?.length && <tr><td colSpan="6" className="empty">Aucun serveur n’a encore vérifié sa licence.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {data && tab === 'logs' && (
+          <div className="table-wrap">
+            <table className="table">
+              <thead><tr><th>Quand</th><th>Événement</th><th>Serveur</th><th>Clé</th><th>Détail</th></tr></thead>
+              <tbody>
+                {(data.logs || []).map((item) => (
+                  <tr key={item.id}>
+                    <td>{when(item.at)}</td>
+                    <td>{item.kind === 'verify' ? 'Contrôle accepté' : 'Contrôle refusé'}</td>
+                    <td>{item.hostname}<br /><span className="muted">{item.ip}</span></td>
+                    <td>{item.key || '—'}</td>
+                    <td>{item.reason}</td>
+                  </tr>
+                ))}
+                {!data.logs?.length && <tr><td colSpan="5" className="empty">Aucun événement.</td></tr>}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {data && tab === 'base' && (

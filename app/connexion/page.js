@@ -24,10 +24,10 @@ function Form() {
     setBusy(true);
     setError('');
     try {
-      await login(email, password);
+      const session = await login(email, password);
       sound.play('success');
       toast('Connexion réussie.');
-      router.push(next);
+      router.push(session.user?.role === 'manager' ? '/manager' : next);
     } catch (err) {
       sound.play('error');
       setError(err.message);
