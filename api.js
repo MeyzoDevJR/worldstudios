@@ -1,10 +1,4 @@
-const base = () => {
-  const remote = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8787';
-  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && remote.startsWith('http://')) {
-    return '/ws-api';
-  }
-  return remote.replace(/\/$/, '');
-};
+const base = () => '/ws-api';
 
 function token() {
   if (typeof window === 'undefined') return '';
